@@ -529,10 +529,10 @@ MapIndexer indexer_res (args_res,ranges_res, args_or,ranges_or);
       ++indexer_reordering;
       //std::cout<<"a "<<a<<" b "<<b<<" c "<<c<<" d "<<d<<"\n";
       
-      double ab= LogAware::pow(a+b,count);
+      double ab= LogAware::pow(a+b,(unsigned)count);
       ps_res[indexer_res]=ab;
       ++indexer_res;
-      ps_res[indexer_res]=LogAware::pow(a+b+c+d,count)-ab;
+      ps_res[indexer_res]=LogAware::pow(a+b+c+d,(unsigned)count)-ab;
       ++indexer_res;
       //std::cout<<"res\n";
         //std::cout<<ps_res<<"\n";
@@ -717,7 +717,7 @@ GenericFactor<T>::sumOutIndexNOV2 (size_t idx, std::vector<size_t> idxConv, size
             }
             n_elements++;
 
-            ps_res[indexer_res] = LogAware::pow(res, count);
+            ps_res[indexer_res] = LogAware::pow(res,(unsigned) count);
             //std::cout<<"\n"<<ps_res<<"\n";
             // sottrai minori
             label=resetLabel(label);
