@@ -24,7 +24,8 @@ operator<< (std::ostream &os, const MapIndexer& indexer)
   os << "(" ;
   os << std::setw (2) << std::setfill('0') << indexer.index_;
   os << ") " ;
-  os << indexer.indices_;
+  os << indexer.indices_<<"\n";
+  os << indexer.offsets_;
   return os;
 }
 

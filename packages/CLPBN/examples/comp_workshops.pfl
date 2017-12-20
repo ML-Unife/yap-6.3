@@ -12,10 +12,11 @@
 %:- set_solver(bp).
 %:- set_solver(cbp).
 %:- set_solver(gibbs).
-%:- set_solver(lve).
+:- set_solver(lve).
 %:- set_solver(lkc).
 %:- set_solver(lbp).
-
+:- yap_flag(unknown,fail).
+:- set_pfl_flag(verbosity,3).
 :- multifile reg/2.
 
 reg(p1,w1).

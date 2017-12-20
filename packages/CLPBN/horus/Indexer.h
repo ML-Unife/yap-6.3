@@ -269,16 +269,24 @@ MapIndexer::MapIndexer (
       valid_(true)
 {
   size_t prod = 1;
+  //std::cout<< wantedRanges.size()<<"wantedRanges.size()\n";
   std::vector<size_t> offsets (wantedRanges.size());
   for (size_t i = wantedRanges.size(); i-- > 0; ) {
     offsets[i] = prod;
     prod *= wantedRanges[i];
   }
+  //std::cout <<offsets<<" off\n";
   offsets_.reserve (allArgs.size());
   for (size_t i = 0; i < allArgs.size(); i++) {
     size_t idx = Util::indexOf (wantedArgs, allArgs[i]);
+    //std::cout<< i<<" i"<< idx<<" dix\n";
     offsets_.push_back (idx != wantedArgs.size() ? offsets[idx] : 0);
+
   }
+//  std::cout<<"Indexer:\n";
+//  std::cout<<"offsets: "<<offsets_<<"\n";
+//  std::cout<<"indices: "<<indices_<<"\n";
+//  std::cout<<"ranges: "<<ranges_<<"\n";
 }
 
 
@@ -288,16 +296,24 @@ MapIndexer::operator++()
 {
   assert (valid_);
   for (size_t i = ranges_.size(); i-- > 0; ) {
+    //std::cout<<"i: "<< i;
     indices_[i] ++;
+    //std::cout<<" indices[i]: " << indices_[i] << " " << indices_;
     index_ += offsets_[i];
+    //std::cout<<" index_: "<<index_;
     if (indices_[i] != ranges_[i]) {
+        //std::cout<<" return\n";
+        //std::cout<<"index_: "<<index_<<"\n";
       return *this;
     } else {
+      //  std::cout<<" indices_[i] == ranges_[i] ";
       indices_[i] = 0;
+      //std::cout<< indices_ << " ";
       index_ -= offsets_[i] * ranges_[i];
     }
   }
   valid_ = false;
+  //std::cout << index_<<" index\n";
   return *this;
 }
 

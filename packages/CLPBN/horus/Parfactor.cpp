@@ -16,14 +16,28 @@ Parfactor::Parfactor (
     const ProbFormulas& formulas,
     const Params& params,
     const Tuples& tuples,
-    unsigned distId)
+    unsigned distId,
+    std::vector<bool> conv,
+    bool het)
 {
   args_   = formulas;
   params_ = params;
   distId_ = distId;
+  convergent_=conv;
+  heterogeneous_ =het;
+  
 
   LogVars logVars;
+  
   for (size_t i = 0; i < args_.size(); i++) {
+      //if convergent da commentare
+//    if (convergent_[i])
+//    {
+////      std::cout<< "i "<<i<<"\n";
+//      heterogeneous_ =true;
+//    }
+    
+
     ranges_.push_back (args_[i].range());
     const LogVars& lvs = args_[i].logVars();
     for (size_t j = 0; j < lvs.size(); j++) {
@@ -61,6 +75,9 @@ Parfactor::Parfactor (const Parfactor* g, const Tuple& tuple)
   params_  = g->params();
   ranges_  = g->ranges();
   distId_  = g->distId();
+  heterogeneous_ = g->isHeterogeneous();
+  convergent_ = g->convergent();
+  
   constr_  = new ConstraintTree (g->logVars(), {tuple});
   assert (params_.size() == Util::sizeExpected (ranges_));
 }
@@ -73,6 +90,9 @@ Parfactor::Parfactor (const Parfactor* g, ConstraintTree* constr)
   params_  = g->params();
   ranges_  = g->ranges();
   distId_  = g->distId();
+  heterogeneous_ = g->isHeterogeneous();
+  convergent_ = g->convergent();
+  
   constr_  = constr;
   assert (params_.size() == Util::sizeExpected (ranges_));
 }
@@ -86,6 +106,8 @@ Parfactor::Parfactor (const Parfactor& g)
   ranges_  = g.ranges();
   distId_  = g.distId();
   constr_  = new ConstraintTree (*g.constr());
+  heterogeneous_ = g.isHeterogeneous();
+  convergent_ = g.convergent();
   assert (params_.size() == Util::sizeExpected (ranges_));
 }
 
@@ -176,10 +198,83 @@ Parfactor::sumOutIndex (size_t fIdx)
   } else {
     exp = constr_->getConditionalCount (excl);
   }
-  constr_->remove (excl);
 
-  GenericFactor<ProbFormula>::sumOutIndex (fIdx);
-  LogAware::pow (params_, exp);
+  if (isHeterogeneous())
+  {
+//    std::cout<<"var "<<args_[fIdx].noisyOrLogVars()<<"\n";
+//    std::cout<<"all vars "<<logVarSet()<<"\n";
+//    exp = constr_->getConditionalCount (args_[fIdx].noisyOrLogVars());
+  //  std::cout<<"exp "<<exp<<"\n";
+    if (Globals::verbosity > 3) {
+        std::cout<<"-----------\nParfactor before summation\n";
+        print();
+    }
+    bool het=false;
+    for (size_t ar=0;ar<convergent_.size();ar++)
+      het=het || convergent_[ar];
+    heterogeneous_=het;
+    std::vector<size_t> id;
+    for (size_t i = 0;i< convergent_.size();i++)
+    {
+       if (convergent_[i])
+           id.push_back(i);
+    } //|| id==fIdx
+
+    if (id.size() == 1)// && heterogeneous_) //
+    //if (convergent_[fIdx]&&id==fIdx)
+    {
+//      bool sumMode = false;
+//      bool hetMode = true;
+//      std::cout << "id=fIdx\n";
+//      if (sumMode)
+//        GenericFactor<ProbFormula>::sumOutIndexNOV (fIdx,id,exp);
+//      else
+        if (id[0]==fIdx) {
+           GenericFactor<ProbFormula>::sumOutIndex (fIdx);
+      //if (hetMode) 
+           setHeterogeneous();
+        } else {
+            GenericFactor<ProbFormula>::sumOutIndexNOV (fIdx,id[0],exp);
+        }
+      if (Globals::verbosity > 3) {
+          std::cout<<"-----------\nParfactor after summation\n";
+          print();
+      }
+    }
+    else
+    {
+         //if (id[0] == convergent_.size()) id[0] = fIdx;
+//      exp=constr_->getConditionalCount (excl - args_[convergent_[0]].logVarSet());
+         //std::cout << exp <<" exp\n";
+         GenericFactor<ProbFormula>::sumOutIndexNOV2 (fIdx,id,exp);
+         if (Globals::verbosity > 3) {
+           std::cout<<"-----------\nParfactor after summation\n";
+           std::cout.flush();
+           print();
+         }
+    }
+  }
+  else
+  {
+    if (Globals::verbosity > 3) {
+        std::cout<<"-----------\nParfactor before summation\n";
+        print();
+    }
+    GenericFactor<ProbFormula>::sumOutIndex (fIdx);
+    if (Globals::verbosity > 3) {
+        std::cout<<"-----------\nParfactor after summation\n";
+        print();
+    }
+
+    LogAware::pow (params_, exp);
+    if (Globals::verbosity > 3) {
+        std::cout<<"-----------\nParfactor after exp\n";
+        print();
+    }
+ 
+  }
+ constr_->remove (excl);
+
 }
 
 
@@ -188,10 +283,91 @@ void
 Parfactor::multiply (Parfactor& g)
 {
   alignAndExponentiate (this, &g);
-  GenericFactor<ProbFormula>::multiply (g);
+
+  if (Globals::verbosity > 3) {
+      std::cout<<"-- 1st factor ------\n";
+      print();
+  
+      std::cout<<"-- 2nd factor ------\n";
+      g.print();
+  }
+  std::vector<bool> g_conv = g.convergent(); 
+  const std::vector<ProbFormula>& g_args = g.arguments();
+  
+  if  (heterogeneous_ && g.isHeterogeneous())
+  { 
+      //std::cout<<"hete\n";
+   size_t ind;
+   size_t idx = 0;
+   std::vector<size_t> idx1;
+   std::vector<size_t> idx2;
+   //std::cout << args_<<" args\n"<< g_args<<" g_args\n";
+   for (ind = 0; ind < g_conv.size(); ind++) {
+       if (g_conv[ind]) {
+           size_t pos = indexOf (g_args[ind]);
+           if (pos != args_.size()) {
+                idx1.push_back(pos);
+                idx2.push_back(ind);
+                idx++;
+           }
+       }
+   }
+   
+   
+//    for (ind=0;(ind< g_conv.size()&&!g_conv[ind]);ind++);//ind indice variabile convergente in g
+//     size_t idx = indexOf (g_args[ind]); //indice dell'elemento corrispondente alla variabile conv
+     
+     
+     if (idx > 0 ) { //!=args_.size()) {//corrisondono
+       //if (convergent_[idx])
+         if (Globals::verbosity > 3) std::cout<<"Heterogeneous multiplication\n";
+//         std::cout<<"hete "<<idx<<" "<<ind<<"\n";
+//         GenericFactor<ProbFormula>::multiplyHet (g,idx,ind);
+         //std::cout<<"hete "<<idx1[0]<<" "<<idx2[0]<<"\n";
+         if (idx1.size() > 1 || idx2.size() > 1)
+             GenericFactor<ProbFormula>::multiplyHet2 (g,idx1,idx2);
+         else
+             GenericFactor<ProbFormula>::multiplyHet (g,idx1[0],idx2[0]);
+       //else
+         //GenericFactor<ProbFormula>::multiply (g);
+     } else {
+       if (Globals::verbosity > 3) std::cout<<"Homogeneous multiplication\n";
+       GenericFactor<ProbFormula>::multiply (g);
+     }
+  }
+  else {
+    if (Globals::verbosity > 3) std::cout<<"Homogeneous multiplication\n";
+    GenericFactor<ProbFormula>::multiply (g);
+  }
   constr_->join (g.constr(), true);
   simplifyGrounds();
+  //std::cout<< "hete "<<heterogeneous_ << g.isHeterogeneous();
+
+  heterogeneous_= heterogeneous_ || g.isHeterogeneous();
+  if (heterogeneous_)
+  {
+    for (size_t i=0;i< g_args.size();i++)
+    {
+      if (g_conv[i])
+      {
+       // std::cout<< i<< " i \n";
+        size_t idx = indexOf (g_args[i]);
+        //std::cout<< idx<< " idx \n";
+	if (idx!=args_.size())
+	 // if (!args_[idx].isNoisyOr())
+	  { 
+	  //  std::cout<<  " no \n";
+
+            convergent_[idx]=true;
+	  }
+      }
+    }
+  }
   assert (constr_->isCartesianProduct (countedLogVars()));
+  if (Globals::verbosity > 3) {
+      std::cout<<"\n-- Result ----------\n";
+      print();
+  }
 }
 
 
@@ -313,6 +489,11 @@ Parfactor::expand (LogVar X, LogVar X_new1, LogVar X_new2)
   }
   ranges_.insert (ranges_.begin() + fIdx + 1, H2);
   ranges_[fIdx] = H1;
+  //std::cout<<H2<<"\n";
+  convergent_.insert(convergent_.begin() + fIdx + 1, convergent_[fIdx]);
+  //convergent_[fIdx] = H1;
+  //std::cout<<convergent_<<"\n";
+  
 }
 
 
@@ -623,6 +804,8 @@ Parfactor::print (bool printParams) const
   }
   cout << "LogVars:   " << constr_->logVarSet()  << endl;
   cout << "Ranges:    " << ranges_ << endl;
+  cout << "Convergent:" << convergent_ << endl;
+  cout << "Heterogen.:" << heterogeneous_<< endl;
   if (printParams == false) {
     cout << "Params:    " ;
     if (params_.size() <= 32) {
@@ -634,7 +817,12 @@ Parfactor::print (bool printParams) const
   }
   ConstraintTree copy (*constr_);
   copy.moveToTop (copy.logVarSet().elements());
-  cout << "Tuples:    " << copy.tupleSet() << endl;
+  cout << "Tuples:    " ;
+  if ( (copy.tupleSet()).size() <= 100) {
+      cout << copy.tupleSet() << endl;
+  } else {
+      cout << "|" << (copy.tupleSet()).size() << "|" << endl;
+  }
   if (printParams) {
     printParameters();
   }
@@ -793,6 +981,7 @@ Parfactor::simplifyGrounds()
 bool
 Parfactor::canMultiply (Parfactor* g1, Parfactor* g2)
 {
+  //std::cout<< "can mut\n";
   std::pair<LogVars, LogVars> res = getAlignLogVars (g1, g2);
   LogVarSet Xs_1 (res.first);
   LogVarSet Xs_2 (res.second);

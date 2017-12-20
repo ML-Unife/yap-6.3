@@ -16,7 +16,7 @@ namespace Horus {
 class Parfactor : public GenericFactor<ProbFormula> {
   public:
     Parfactor (const ProbFormulas&, const Params&, const Tuples&,
-        unsigned distId);
+        unsigned distId, std::vector<bool> conv, bool het);
 
     Parfactor (const Parfactor*, const Tuple&);
 
@@ -96,6 +96,7 @@ class Parfactor : public GenericFactor<ProbFormula> {
 
     static bool canMultiply (Parfactor*, Parfactor*);
 
+
   private:
     void simplifyCountingFormulas (size_t fIdx);
 
@@ -112,7 +113,7 @@ class Parfactor : public GenericFactor<ProbFormula> {
     static void alignLogicalVars (Parfactor*, Parfactor*);
 
     ConstraintTree* constr_;
-
+    
     DISALLOW_ASSIGN (Parfactor);
 };
 

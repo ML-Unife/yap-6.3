@@ -44,8 +44,10 @@ call_horus_lifted_solver(QueryVars, AllVars, Output) :-
 init_horus_lifted_solver(_, AllVars, _, state(Network, DistIds)) :-
 	get_parfactors(Parfactors),
 	get_observed_keys(AllVars, ObservedKeys),
+%	write('here\n'),flush_output,
 	%writeln(network:(parfactors=Parfactors, evidence=ObservedKeys)), nl,
 	cpp_create_lifted_network(Parfactors, ObservedKeys, Network),
+%	write('ciao\n'),flush_output,
 	maplist(get_dist_id, Parfactors, DistIds0),
 	sort(DistIds0, DistIds).
 
@@ -69,8 +71,8 @@ get_parfactors(Factors) :-
 	findall(F, is_factor(F), Factors).
 
 
-is_factor(pf(Id, Ks, Rs, Phi, Tuples)) :-
-	factor(_Type, Id, Ks, Vs, Table, Constraints),
+is_factor(pf(Type,Id, Ks, Rs, Phi, Tuples)) :-
+	factor(Type, Id, Ks, Vs, Table, Constraints),
 	maplist(get_range, Ks, Rs),
 	Table \= avg,
 	gen_table(Table, Phi),
@@ -80,6 +82,8 @@ is_factor(pf(Id, Ks, Rs, Phi, Tuples)) :-
 get_range(K, Range) :-
 	skolem(K, Domain),
 	length(Domain, Range).
+
+%gen_table((_,_,Phi), Phi) :-!.
 
 
 gen_table(Table, Phi) :-
@@ -97,7 +101,7 @@ run(Goal.Constraints) :-
 	run(Constraints).
 
 
-get_dist_id(pf(DistId, _, _, _, _), DistId).
+get_dist_id(pf(_,DistId, _, _, _, _), DistId).
 
 
 get_observed_keys([], []).

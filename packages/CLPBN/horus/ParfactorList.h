@@ -1,4 +1,4 @@
-#ifndef YAP_PACKAGES_CLPBN_HORUS_PARFACTORLIST_H_
+  #ifndef YAP_PACKAGES_CLPBN_HORUS_PARFACTORLIST_H_
 #define YAP_PACKAGES_CLPBN_HORUS_PARFACTORLIST_H_
 
 #include <list>
@@ -21,7 +21,9 @@ class ParfactorList {
     ParfactorList (const Parfactors&);
 
    ~ParfactorList();
-
+   
+   std::list<std::pair<PrvGroup,PrvGroup> > getDeputation() { return deputation_; }
+   
     const std::list<Parfactor*>& parfactors() const { return pfList_; }
 
     void clear() { pfList_.clear(); }
@@ -35,8 +37,8 @@ class ParfactorList {
     iterator end() { return pfList_.end(); }
 
     typedef std::list<Parfactor*>::const_iterator const_iterator;
-
-    const_iterator begin() const { return pfList_.begin(); }
+	
+	const_iterator begin() const { return pfList_.begin(); }
 
     const_iterator end() const { return pfList_.end(); }
 
@@ -54,13 +56,26 @@ class ParfactorList {
 
     std::list<Parfactor*>::iterator removeAndDelete (
         std::list<Parfactor*>::iterator);
+    
+    std::list<Parfactor*>::iterator Tdelete (
+        std::list<Parfactor*>::iterator);
 
     bool isAllShattered() const;
 
     void print() const;
-
+    
     ParfactorList& operator= (const ParfactorList& pfList);
 
+    void addDepCouple(PrvGroup g1, PrvGroup g2);
+	
+    bool isDeputyVariable(PrvGroup isDep);
+    
+    PrvGroup getDeputyCorrespondingVariable(PrvGroup dep);
+	
+    void updateDeputationList();
+    
+    void printDeputationList() const;
+   
   private:
     bool isShattered (const Parfactor*) const;
 
@@ -103,9 +118,10 @@ class ParfactorList {
         const ProbFormula&, ConstraintTree) const;
 
     std::list<Parfactor*> pfList_;
+    
+    std::list< std::pair<PrvGroup,PrvGroup> > deputation_;
 };
 
 }  // namespace Horus
 
 #endif  // YAP_PACKAGES_CLPBN_HORUS_PARFACTORLIST_H_
-

@@ -1,0 +1,26 @@
+:- constraints([person/1,workshop/1]).
+
+series:- person(P),attends(P),sa(P).
+
+0.501::sa(P):-person(P).
+
+attends(P):- person(P),\+ attends_other(P).
+
+attends_other(P):- person(P),workshop(W),hot(W),ah(P,W).
+
+0.8::ah(P,W) :- person(P),workshop(W).
+
+0.51::hot(W) :- workshop(W).
+
+
+workshop(w1).
+workshop(w2).
+workshop(w3).
+workshop(w4).
+workshop(w5).
+
+person(p1).
+person(p2).
+person(p3).
+person(p4).
+person(p5).

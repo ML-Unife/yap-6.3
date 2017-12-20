@@ -48,7 +48,14 @@ createLiftedNetwork()
   YAP_Term parfactorList = YAP_ARG1;
   while (parfactorList != YAP_TermNil()) {
     YAP_Term pfTerm = YAP_HeadOfTerm (parfactorList);
+    //Parfactor * pf=
+    //readParfactor (pfTerm);
+     //std::cout<< " vvv\n";std::cout.flush();
+
+     //parfactors.push_back (pf);
     parfactors.push_back (readParfactor (pfTerm));
+     //std::cout<< " wwww\n";std::cout.flush();
+
     parfactorList = YAP_TailOfTerm (parfactorList);
   }
 
@@ -67,7 +74,7 @@ createLiftedNetwork()
     Util::printHeader ("SHATTERED PARFACTORS");
     pfList->print();
   }
-
+  
   // read evidence
   ObservedFormulas* obsFormulas = readLiftedEvidence (YAP_ARG2);
 
@@ -379,35 +386,139 @@ Parfactor*
 readParfactor (YAP_Term pfTerm)
 {
   // read dist id
-  unsigned distId = YAP_IntOfTerm (YAP_ArgOfTerm (1, pfTerm));
-
+  unsigned distId = YAP_IntOfTerm (YAP_ArgOfTerm (2, pfTerm));
+  size_t indexConv=-1;
+  std::vector<bool> conv;
   // read the ranges
   Ranges ranges;
-  YAP_Term rangeList = YAP_ArgOfTerm (3, pfTerm);
+  YAP_Term rangeList = YAP_ArgOfTerm (4, pfTerm);
   while (rangeList != YAP_TermNil()) {
     unsigned range = (unsigned) YAP_IntOfTerm (YAP_HeadOfTerm (rangeList));
     ranges.push_back (range);
     rangeList = YAP_TailOfTerm (rangeList);
   }
-
+  
+  YAP_Term typeTerm = YAP_ArgOfTerm (1, pfTerm);
+  std::string nameType;
+  
+  if (YAP_IsAtomTerm(typeTerm)) {
+      YAP_Atom yapF = YAP_AtomOfTerm (typeTerm);
+      nameType = ((char*) YAP_AtomName (yapF));
+      
+  } else {
+        YAP_Functor yapF = YAP_FunctorOfTerm (typeTerm);
+        nameType = ((char*) YAP_AtomName (YAP_NameOfFunctor(yapF)));
+  }
+  
+  //std::cout<<"name: "<<nameType<<"\n";
+  bool dep =  !nameType.compare("deputy");
+  //std::cout<<"deputy? " << dep <<"\n";
+  if (dep)
+  {
+    indexConv= (size_t) 1;
+    //index=(size_t) YAP_IntOfTerm (YAP_ArgOfTerm(2,typeTerm));
+    //std::cout<<" -> indexConv: " <<indexConv <<"\n";
+  }
+  
+  bool nor= !YAP_IsAtomTerm (typeTerm);
+  //std::cout<<"noisy_or? " << nor <<"\n";
+  
+  if (nor)
+  {
+    indexConv= (size_t) YAP_IntOfTerm (YAP_ArgOfTerm(1,typeTerm));
+    //index=(size_t) YAP_IntOfTerm (YAP_ArgOfTerm(2,typeTerm));
+    //std::cout<<" -> indexConv: " <<indexConv <<"\n";
+  }
+  //if(dep)  indexConv=1;
   // read parametric random vars
   ProbFormulas formulas;
   unsigned count = 0;
   std::unordered_map<YAP_Term, LogVar> lvMap;
-  YAP_Term pvList = YAP_ArgOfTerm (2, pfTerm);
+  YAP_Term pvList = YAP_ArgOfTerm (3, pfTerm);
   while (pvList != YAP_TermNil()) {
+    //std::cout << " entering cycle\n"; std::cout.flush();
+
     YAP_Term formulaTerm = YAP_HeadOfTerm (pvList);
     if (YAP_IsAtomTerm (formulaTerm)) {
       std::string name ((char*) YAP_AtomName (YAP_AtomOfTerm (formulaTerm)));
+      //std::cout << "  first if (atomic): " << name; std::cout<< "\n";
       Symbol functor = LiftedUtils::getSymbol (name);
-      formulas.push_back (ProbFormula (functor, ranges[count]));
+      //std::cout<< "   nor, dep, count, indexConv " << nor << " " << dep << " " << count << " " << (int) indexConv << "\n";
+      if ((nor || dep) && (count==indexConv))
+         conv.push_back(true);
+      //formulas.push_back (ProbFormula (functor, ranges[count]));
+      
+      else
+        conv.push_back(false);
+      
+      //std::cout << "   conv : " << conv << "\n";
+      formulas.push_back(ProbFormula (functor, ranges[count]));
+      //std::cout<< "   ac\n";
+
     } else {
-      LogVars logVars;
+      LogVars logVars,orLogVars;
       YAP_Functor yapFunctor = YAP_FunctorOfTerm (formulaTerm);
       std::string name ((char*) YAP_AtomName (
-          YAP_NameOfFunctor (yapFunctor)));
+      YAP_NameOfFunctor (yapFunctor)));
+      //std::cout << "  second if (not_atomic): " << name;  std::cout<< "\n"; std::cout.flush();
+/*
+    if (nor && id==index)
+    {
+	std::cout<< "or"; std::cout.flush();
+    YAP_Term varsList = YAP_ArgOfTerm (2, formulaTerm);
+    
+    j = YAP_IntOfTerm(YAP_ArgOfTerm (1, formulaTerm));
+    std::cout<<" "<<j; std::cout.flush();
+
+    YAP_Term prv = YAP_ArgOfTerm (3, formulaTerm);
+    YAP_Functor yapFunctorprv = YAP_FunctorOfTerm (prv);
+	std::string nameprv ((char*) YAP_AtomName (
+          YAP_NameOfFunctor (yapFunctorprv)));
+	Symbol functor = LiftedUtils::getSymbol (nameprv);
+      unsigned arity = (unsigned) YAP_ArityOfFunctor (yapFunctorprv);
+      std::cout<< "arity"<< arity<< "\n";
+      for (unsigned i = 1; i <= arity; i++) {
+        YAP_Term ti = YAP_ArgOfTerm (i, prv);
+        std::unordered_map<YAP_Term, LogVar>::iterator it = lvMap.find (ti);
+        if (it != lvMap.end()) {
+          logVars.push_back (it->second);
+        } else {
+         unsigned newLv = lvMap.size();
+         lvMap[ti] = newLv;
+         logVars.push_back (newLv);
+        }}
+	std::cout<<"log v "<<logVars<<"\n";
+     while (varsList !=YAP_TermNil())
+    {
+      YAP_Term ti=YAP_HeadOfTerm(varsList);
+        std::unordered_map<YAP_Term, LogVar>::iterator it = lvMap.find (ti);
+        if (it != lvMap.end()) {
+          orLogVars.push_back (it->second);
+        } else {
+         unsigned newLv = lvMap.size();
+         lvMap[ti] = newLv;
+         orLogVars.push_back (newLv);
+        }
+    varsList=YAP_TailOfTerm(varsList);
+    }
+      std::cout<< " "<< j<<" j\n";std::cout.flush();
+      //ProbFormula pf=ProbFormula (functor, logVars,orLogVars, ranges[count],j);
+      formulas.push_back (ProbFormula (functor, logVars,orLogVars, ranges[count],j));
+//        formulas.push_back (ProbFormula (functor, logVars, ranges[count]));
+	std::cout<< " pf\n";std::cout.flush();
+
+//        formulas.push_back(pf);
+//	std::cout<< " pf1\n";std::cout.flush();
+	
+    }
+
+    
+    else 
+    
+    {*/
       Symbol functor = LiftedUtils::getSymbol (name);
       unsigned arity = (unsigned) YAP_ArityOfFunctor (yapFunctor);
+      //std::cout <<"    -> arity: " << arity << "\n";
       for (unsigned i = 1; i <= arity; i++) {
         YAP_Term ti = YAP_ArgOfTerm (i, formulaTerm);
         std::unordered_map<YAP_Term, LogVar>::iterator it = lvMap.find (ti);
@@ -419,19 +530,36 @@ readParfactor (YAP_Term pfTerm)
          logVars.push_back (newLv);
         }
       }
+            
+      //std::cout<< "   nor, dep, count, indexConv " << nor << " " << dep << " " << count << " " << indexConv << "\n";
+      if ((nor || dep) && (count==indexConv))
+        conv.push_back(true);
+      //formulas.push_back (ProbFormula (functor, ranges[count]));
+      
+      else
+        conv.push_back(false);
+ 
+      //std::cout << "   conv: " << conv << "\n";
+/*       if (nor && (count==indexConv))
+      { //std::cout<< "indexconv "<<indexConv<<"\n";
+      formulas.push_back (ProbFormula (functor, logVars, ranges[count],indexConv));
+      }
+      else*/
       formulas.push_back (ProbFormula (functor, logVars, ranges[count]));
+    //}
     }
     count ++;
     pvList = YAP_TailOfTerm (pvList);
   }
-
+ //std::cout<< " pppp\n";std::cout.flush();
+ 
   // read the parameters
-  Params params = readParameters (YAP_ArgOfTerm (4, pfTerm));
+  Params params = readParameters (YAP_ArgOfTerm (5, pfTerm));
 
   // read the constraint
   Tuples tuples;
   if (lvMap.size() >= 1) {
-    YAP_Term tupleList = YAP_ArgOfTerm (5, pfTerm);
+    YAP_Term tupleList = YAP_ArgOfTerm (6, pfTerm);
     while (tupleList != YAP_TermNil()) {
       YAP_Term term = YAP_HeadOfTerm (tupleList);
       assert (YAP_IsApplTerm (term));
@@ -447,13 +575,17 @@ readParfactor (YAP_Term pfTerm)
           exit (EXIT_FAILURE);
         }
         std::string name ((char*) YAP_AtomName (YAP_AtomOfTerm (ti)));
+	//std::cout<< name;std::cout<<" tuple";
         tuple[i - 1] = LiftedUtils::getSymbol (name);
       }
       tuples.push_back (tuple);
       tupleList = YAP_TailOfTerm (tupleList);
     }
   }
-  return new Parfactor (formulas, params, tuples, distId);
+  //std::cout<< "returning new Parfactor\n";std::cout.flush();
+
+  return new Parfactor (formulas, params, tuples, distId, conv , nor);
+  //std::cout<<"pf lvs "<<pf->logVarSet()<<"\n";
 }
 
 

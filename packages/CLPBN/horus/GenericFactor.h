@@ -51,23 +51,52 @@ class GenericFactor {
 
     GenericFactor<T>& multiply (const GenericFactor<T>& g);
 
+     GenericFactor<T>& multiplyHet (const GenericFactor<T>& g, size_t idxConv1,
+size_t idxConv2);
+     
+     GenericFactor<T>& multiplyHet2 (const GenericFactor<T>& g, std::vector<size_t> idxConv1,
+std::vector<size_t> idxConv2);
+
     void sumOutIndex (size_t idx);
+
+    void sumOutIndexNOV (size_t idx, size_t idxConv, size_t count);
+    
+    void sumOutIndexNOV2 (size_t idx, std::vector<size_t> idxConv, size_t count);
 
     void absorveEvidence (const T& arg, unsigned obsIdx);
 
     void reorderArguments (const std::vector<T>& new_args);
+    
+    const bool isHeterogeneous() const { return heterogeneous_;}
+   
+    void resetHeterogeneous() {  heterogeneous_=false; }
+    
+    void setHeterogeneous();
+ 
+    const std::vector<bool> convergent() const { return convergent_; }
 
+    const bool isDeputy();
   protected:
     std::vector<T>  args_;
     Ranges          ranges_;
     Params          params_;
     unsigned        distId_;
+    bool heterogeneous_;
+    std::vector<bool> convergent_;
 
   private:
     void extend (unsigned range_prod);
 
     void cartesianProduct (
       Params::const_iterator first2, Params::const_iterator last2);
+    
+    std::vector<bool> incrementLabel(std::vector<bool> label);
+    
+    bool lessLabels(std::vector<bool> labelA, std::vector<bool> labelB);
+    
+    bool orLabels(std::vector<bool> labelA, std::vector<bool> labelB, std::vector<bool> labelRes);
+    
+    std::vector<bool> resetLabel(std::vector<bool> label);
 };
 
 }  // namespace Horus

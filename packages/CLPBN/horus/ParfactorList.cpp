@@ -41,7 +41,9 @@ ParfactorList::~ParfactorList()
 void
 ParfactorList::add (Parfactor* pf)
 {
+  //  std::cout<<pf->getAllGroups()<<"\n";
   pf->setNewGroups();
+  //std::cout<<pf->getAllGroups()<<"\n";
   addToShatteredList (pf);
 }
 
@@ -52,6 +54,7 @@ ParfactorList::add (const Parfactors& pfs)
 {
   for (size_t i = 0; i < pfs.size(); i++) {
     pfs[i]->setNewGroups();
+  //  std::cout<< " i \n"<< i;
     addToShatteredList (pfs[i]);
   }
 }
@@ -92,6 +95,12 @@ ParfactorList::removeAndDelete (std::list<Parfactor*>::iterator it)
 {
   delete *it;
   return pfList_.erase (it);
+}
+
+std::list<Parfactor*>::iterator
+ParfactorList::Tdelete (std::list<Parfactor*>::iterator it)
+{
+  delete *it;
 }
 
 
@@ -142,6 +151,9 @@ ParfactorList::print() const
     pfVec[i]->print();
     std::cout << std::endl;
   }
+  
+  if (Globals::verbosity > 3)
+      printDeputationList();
 }
 
 
@@ -249,21 +261,27 @@ ParfactorList::addToShatteredList (Parfactor* g)
 {
   std::queue<Parfactor*> residuals;
   residuals.push (g);
+  //std::cout<<"1\n";
   while (residuals.empty() == false) {
+      //std::cout<<"2\n";
     Parfactor* pf = residuals.front();
     bool pfSplitted = false;
     std::list<Parfactor*>::iterator pfIter;
     pfIter = pfList_.begin();
     while (pfIter != pfList_.end()) {
       std::pair<Parfactors, Parfactors> shattRes;
+      //std::cout<<"3\n";
       shattRes = shatter (*pfIter, pf);
+      //std::cout<<"4\n";
       if (shattRes.first.empty() == false) {
         pfIter = removeAndDelete (pfIter);
+        //std::cout<<"5\n";
         Util::addToQueue (residuals, shattRes.first);
       } else {
         ++ pfIter;
       }
       if (shattRes.second.empty() == false) {
+          //std::cout<<"6\n";
         delete pf;
         Util::addToQueue (residuals, shattRes.second);
         pfSplitted = true;
@@ -271,12 +289,18 @@ ParfactorList::addToShatteredList (Parfactor* g)
       }
     }
     residuals.pop();
+    //std::cout<<"7\n";
     if (pfSplitted == false) {
       Parfactors res = shatterAgainstMySelf (pf);
+      //std::cout<<"8\n";
       if (res.empty()) {
+        //  std::cout<<"9\n";
         addShattered (pf);
+        //std::cout<<"10\n";
       } else {
+          //std::cout<<"11\n";
         Util::addToQueue (residuals, res);
+        //std::cout<<"12\n";
       }
     }
   }
@@ -437,12 +461,20 @@ ParfactorList::shatter (Parfactor* g1, Parfactor* g2)
 {
   ProbFormulas& formulas1 = g1->arguments();
   ProbFormulas& formulas2 = g2->arguments();
+//  std::cout<<"----------------\ng1\n";
+//  g1->print();
+//  std::cout<<"------------------\n";
+//  std::cout<<"----------------\ng2\n";
+//  g2->print();
+//  std::cout<<"------------------\n";
   assert (g1 && g2 && g1 != g2);
   for (size_t i = 0; i < formulas1.size(); i++) {
     for (size_t j = 0; j < formulas2.size(); j++) {
       if (formulas1[i].sameSkeletonAs (formulas2[j])) {
         std::pair<Parfactors, Parfactors> res;
+        //std::cout<<"pre_inner_shatter\n";
         res = shatter (i, g1, j, g2);
+        //std::cout<<"post_inner-shatter\n";
         if (res.first.empty()  == false ||
             res.second.empty() == false) {
           return res;
@@ -659,6 +691,72 @@ ParfactorList::disjoint (
   TupleSet ts1 = ct1.tupleSet (f1.logVars());
   TupleSet ts2 = ct2.tupleSet (f2.logVars());
   return (ts1 & ts2).empty();
+}
+
+void 
+ParfactorList::addDepCouple(PrvGroup g1, PrvGroup g2)
+{
+   std::pair<PrvGroup,PrvGroup> cg(g1,g2);
+   deputation_.push_back(cg);
+}
+
+bool
+ParfactorList::isDeputyVariable(PrvGroup isDep)
+{
+	std::list< std::pair<PrvGroup,PrvGroup> >::iterator it = deputation_.begin();
+	while (it != deputation_.end()) {
+	  if ((*it).second == isDep)
+		  return true;
+	  ++it;
+	}
+
+	return false;
+}
+
+PrvGroup
+ParfactorList::getDeputyCorrespondingVariable(PrvGroup dep)
+{
+    std::list< std::pair<PrvGroup,PrvGroup> >::iterator it = deputation_.begin();
+	while (it != deputation_.end()) {
+	  if ((*it).second == dep)
+		  return (*it).first;
+	  ++it;
+	}
+
+	return 0;
+    
+}
+
+void 
+ParfactorList::updateDeputationList()
+{
+  //if (Globals::verbosity > 2)
+    //std::cout << "Preparing DeputingList\n";
+  deputation_.clear();
+  ParfactorList::iterator it1 = begin();
+  while (it1 != end()) {
+    if ((*it1)->isDeputy())
+    {
+      PrvGroup g1 = ((*it1)->argument(0)).group();
+      PrvGroup g2 = ((*it1)->argument(1)).group();
+      addDepCouple(g1,g2);
+    }
+    ++it1;
+  }
+}
+
+void 
+ParfactorList::printDeputationList() const
+{
+  std::cout << "\nDeputation Pair List:\n";
+  //pfList.printDeputation();
+  std::cout << "[";
+  std::list<std::pair<PrvGroup,PrvGroup> >::const_iterator itPrint = deputation_.begin();
+  while (itPrint != deputation_.end()){
+    std::cout << "(" << (*itPrint).first << "," << (*itPrint).second << ")";
+    ++itPrint;
+  }
+  std::cout << "]\n\n";
 }
 
 }  // namespace Horus

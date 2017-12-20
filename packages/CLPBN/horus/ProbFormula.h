@@ -18,13 +18,32 @@ class ProbFormula {
   public:
     ProbFormula (Symbol f, const LogVars& lvs, unsigned range)
         : functor_(f), logVars_(lvs), range_(range),
-          countedLogVar_(), group_(std::numeric_limits<PrvGroup>::max()) { }
+          countedLogVar_(), noisyOr_(false),
+	  group_(std::numeric_limits<PrvGroup>::max())
+	 { }
 
-    ProbFormula (Symbol f, unsigned r)
-        : functor_(f), range_(r),
+    ProbFormula (Symbol f, unsigned r, bool nor )
+        : functor_(f), range_(r),noisyOr_(nor),
           group_(std::numeric_limits<PrvGroup>::max()) { }
 
-    Symbol functor() const { return functor_; }
+    ProbFormula (Symbol f, unsigned r)
+        : functor_(f), range_(r),noisyOr_(false),
+          group_(std::numeric_limits<PrvGroup>::max()) { }
+
+/*    ProbFormula (Symbol f, const LogVars& lvs, const LogVars& orlvs, unsigned range)
+        : functor_(f), logVars_(lvs), range_(range), 
+	  countedLogVar_(), orLogVars_(orlvs),
+	  group_(std::numeric_limits<PrvGroup>::max()) { }
+*/
+ProbFormula (Symbol f, const LogVars& lvs,// const LogVars& orlvs, 
+    unsigned range, unsigned convIdx)
+        : functor_(f), logVars_(lvs), range_(range),
+	  countedLogVar_(), //orLogVars_(orlvs), 
+          noisyOr_(true), 
+	  group_(std::numeric_limits<PrvGroup>::max()), 
+	  convVarIdx_(convIdx) { }
+
+  Symbol functor() const { return functor_; }
 
     unsigned arity() const { return logVars_.size(); }
 
@@ -52,7 +71,15 @@ class ProbFormula {
 
     bool isCounting() const;
 
+    bool isNoisyOr() const;
+
+    void setNoisyOr();
+
     LogVar countedLogVar() const;
+
+    LogVarSet noisyOrLogVars();
+
+    size_t getConvVarIdx();
 
     void setCountedLogVar (LogVar);
 
@@ -74,9 +101,12 @@ class ProbFormula {
     LogVars    logVars_;
     unsigned   range_;
     LogVar     countedLogVar_;
+    LogVars    orLogVars_;
+    bool noisyOr_;
     PrvGroup   group_;
     static PrvGroup freeGroup_;
-};
+    unsigned convVarIdx_;
+ };
 
 typedef std::vector<ProbFormula> ProbFormulas;
 

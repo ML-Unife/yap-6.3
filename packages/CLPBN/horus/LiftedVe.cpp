@@ -56,6 +56,8 @@ class ProductOperator : public LiftedOperator {
 
     std::string toString();
 
+    std::vector<PrvGroup> getGroups();
+
   private:
     static bool validOp (Parfactor*, Parfactor*);
 
@@ -81,6 +83,8 @@ class SumOutOperator : public LiftedOperator {
         ParfactorList&, const Grounds&);
 
     std::string toString();
+
+    PrvGroup getGroup() { return group_; }
 
   private:
     static bool validOp (PrvGroup, ParfactorList&, const Grounds&);
@@ -111,6 +115,8 @@ class CountingOperator : public LiftedOperator {
 
     std::string toString();
 
+    std::vector<PrvGroup> getGroups();
+
   private:
     static bool validOp (Parfactor*, LogVar);
 
@@ -139,8 +145,10 @@ class GroundOperator : public LiftedOperator {
 
     std::string toString();
 
+    PrvGroup getGroup() { return group_; }
+
   private:
-    std::vector<std::pair<PrvGroup, unsigned>> getAffectedFormulas();
+    std::vector<std::pair<PrvGroup, unsigned> > getAffectedFormulas();
 
     PrvGroup        group_;
     unsigned        lvIndex_;
@@ -151,21 +159,50 @@ class GroundOperator : public LiftedOperator {
 
 
 
+//std::vector<LiftedOperator*>
+//LiftedOperator::getValidOps (
+//    ParfactorList& pfList,
+//    const Grounds& query)
+//{
+//  std::vector<LiftedOperator*>  validOps;
+//  std::vector<ProductOperator*> multOps;
+//
+//  multOps = ProductOperator::getValidOps (pfList);
+//  validOps.insert (validOps.end(), multOps.begin(), multOps.end());
+//
+//  if (Globals::verbosity > 1 || multOps.empty()) {
+//    std::vector<SumOutOperator*>   sumOutOps;
+//    std::vector<CountingOperator*> countOps;
+//    std::vector<GroundOperator*>   groundOps;
+//    sumOutOps = SumOutOperator::getValidOps (pfList, query);
+//    countOps  = CountingOperator::getValidOps (pfList);
+//    groundOps = GroundOperator::getValidOps (pfList);
+//    validOps.insert (validOps.end(), sumOutOps.begin(), sumOutOps.end());
+//    validOps.insert (validOps.end(), countOps.begin(),  countOps.end());
+//    validOps.insert (validOps.end(), groundOps.begin(), groundOps.end());
+//  }
+//
+//  return validOps;
+//}
+
 std::vector<LiftedOperator*>
 LiftedOperator::getValidOps (
     ParfactorList& pfList,
     const Grounds& query)
 {
+
   std::vector<LiftedOperator*>  validOps;
   std::vector<ProductOperator*> multOps;
+
+  std::vector<SumOutOperator*>   sumOutOps;
+  std::vector<CountingOperator*> countOps;
+  std::vector<GroundOperator*>   groundOps;
 
   multOps = ProductOperator::getValidOps (pfList);
   validOps.insert (validOps.end(), multOps.begin(), multOps.end());
 
   if (Globals::verbosity > 1 || multOps.empty()) {
-    std::vector<SumOutOperator*>   sumOutOps;
-    std::vector<CountingOperator*> countOps;
-    std::vector<GroundOperator*>   groundOps;
+    
     sumOutOps = SumOutOperator::getValidOps (pfList, query);
     countOps  = CountingOperator::getValidOps (pfList);
     groundOps = GroundOperator::getValidOps (pfList);
@@ -174,7 +211,77 @@ LiftedOperator::getValidOps (
     validOps.insert (validOps.end(), groundOps.begin(), groundOps.end());
   }
 
-  return validOps;
+//  std::cout<<"Start check operations\n";
+//  std::list<std::pair<PrvGroup,PrvGroup> > deputyPair = pfList.getDeputation();
+//  std::vector<LiftedOperator*>  deputyOps;
+//  int count = 0;
+  
+  //productOperator
+//  count = 0;
+//  std::vector<ProductOperator*>::iterator itPOp = multOps.begin();
+//  while(itPOp != multOps.end()) {
+//      std::vector<PrvGroup> itGroups((**itPOp).getGroups());
+//      std::vector<PrvGroup>::iterator itG = itGroups.begin();
+//      while (itG != itGroups.end()) {
+//          if (pfList.isDeputyVariable((*itG))) {
+//		deputyOps.insert(deputyOps.end(), (*itPOp));
+//		count++;
+//                break;
+//	  }
+//          ++itG;
+//      }
+//
+//      ++itPOp;
+//  }
+//  std::cout<<"In deputyOp " << count << " productOperations\n";
+  
+//  // sumOutOperatore
+//  count = 0
+//  std::vector<SumOutOperator*>::iterator itSOOp = sumOutOps.begin();
+//  while(itSOOp != sumOutOps.end()) {
+//	  if (pfList.isDeputyVariable((**itSOOp).getGroup())) {
+//		deputyOps.insert(deputyOps.end(),(*itSOOp));
+//		count++;
+//	  }
+//	  ++itSOOp;
+//  }
+//  std::cout<<"In deputyOp " << count << " sumOutOperations\n";
+//  
+//  //countingOperator
+//  count = 0;
+//  std::vector<CountingOperator*>::iterator itCOp = countOps.begin();
+//  while(itCOp != countOps.end()) {
+//      std::vector<PrvGroup> itGroups((**itCOp).getGroups());
+//      std::vector<PrvGroup>::iterator itG = itGroups.begin();
+//      while (itG != itGroups.end()) {
+//          if (pfList.isDeputyVariable((*itG))) {
+//		deputyOps.insert(deputyOps.end(), (*itCOp));
+//		count++;
+//                break;
+//	  }
+//          ++itG;
+//      }
+//
+//      ++itCOp;
+//  }
+//  std::cout<<"In deputyOp " << count << " countingOperations\n";
+//  
+//  //groundingOperator
+//  count = 0;
+//  std::vector<GroundOperator*>::iterator itGOp = groundOps.begin();
+//  while(itGOp != groundOps.end()) {
+//	  if (pfList.isDeputyVariable((**itGOp).getGroup())) {
+//		deputyOps.insert(deputyOps.end(), (*itGOp));
+//		count++;
+//	  }
+//	  ++itGOp;
+//  }
+//  std::cout<<"In deputyOp " << count << " groundOperations\n";
+
+//  if (deputyOps.size() > 0)
+//	  return deputyOps;
+//  else
+	  return validOps;
 }
 
 
@@ -184,8 +291,12 @@ LiftedOperator::printValidOps (
     ParfactorList& pfList,
     const Grounds& query)
 {
+    int verbosity;
   std::vector<LiftedOperator*> validOps;
+  verbosity = Globals::verbosity;
+  Globals::verbosity = 1000;
   validOps = LiftedOperator::getValidOps (pfList, query);
+  Globals::verbosity = verbosity;
   for (size_t i = 0; i < validOps.size(); i++) {
     std::cout << "-> " << validOps[i]->toString();
     delete validOps[i];
@@ -222,8 +333,13 @@ ProductOperator::getLogCost()
 void
 ProductOperator::apply()
 {
+//    std::cout<<"multiply->apply\n";
   Parfactor* g1 = *g1_;
   Parfactor* g2 = *g2_;
+//  std::cout<<"g1:\n";
+//  (*g1_)->print();
+//  std::cout<<"g2:\n";
+//  (*g2_)->print();
   g1->multiply (*g2);
   pfList_.remove (g1_);
   pfList_.removeAndDelete (g2_);
@@ -235,10 +351,12 @@ ProductOperator::apply()
 std::vector<ProductOperator*>
 ProductOperator::getValidOps (ParfactorList& pfList)
 {
+//  std::cout <<"valid mult op";
   std::vector<ProductOperator*> validOps;
   ParfactorList::iterator it1 = pfList.begin();
   ParfactorList::iterator penultimate = -- pfList.end();
   std::set<Parfactor*> pfs;
+  //if (it1 != penultimate) it1++;
   while (it1 != penultimate) {
     if (Util::contains (pfs, *it1)) {
       ++ it1;
@@ -254,8 +372,12 @@ ProductOperator::getValidOps (ParfactorList& pfList)
         if (validOp (*it1, *it2)) {
           pfs.insert (*it1);
           pfs.insert (*it2);
-          validOps.push_back (new ProductOperator (
-              it1, it2, pfList));
+          if ((*it1)->isHeterogeneous() && !((*it2)->isHeterogeneous()))
+              validOps.push_back (new ProductOperator (
+                  it2, it1, pfList));
+          else
+              validOps.push_back (new ProductOperator (
+                  it1, it2, pfList));
           if (Globals::verbosity < 2) {
             return validOps;
           }
@@ -283,6 +405,16 @@ ProductOperator::toString()
   return ss.str();
 }
 
+std::vector<PrvGroup>
+ProductOperator::getGroups() {
+    
+    std::vector<PrvGroup> groups((*g1_)->getAllGroups());
+    
+    std::vector<PrvGroup> groupsG2((*g2_)->getAllGroups());
+    groups.insert(groups.end(), groupsG2.begin(),groupsG2.end());
+    
+    return groups;
+}
 
 
 bool
@@ -295,20 +427,20 @@ ProductOperator::validOp (Parfactor* g1, Parfactor* g2)
     for (size_t i = 0; i < intersect.size(); i++) {
       if (g1->nrFormulasWithGroup (intersect[i]) != 1 ||
           g2->nrFormulasWithGroup (intersect[i]) != 1) {
+	  std::cout << "false1\n";
         return false;
       }
       size_t idx1 = g1->indexOfGroup (intersect[i]);
       size_t idx2 = g2->indexOfGroup (intersect[i]);
       if (g1->range (idx1) != g2->range (idx2)) {
+      //std::cout << "false2\n";
         return false;
       }
     }
     return Parfactor::canMultiply (g1, g2);
   }
-  return false;
+ return false;
 }
-
-
 
 double
 SumOutOperator::getLogCost()
@@ -350,19 +482,90 @@ SumOutOperator::apply()
 {
   std::vector<ParfactorList::iterator> iters;
   iters = getParfactorsWithGroup (pfList_, group_);
-  Parfactor* product = *(iters[0]);
-  pfList_.remove (iters[0]);
-  for (size_t i = 1; i < iters.size(); i++) {
-    product->multiply (**(iters[i]));
-    pfList_.removeAndDelete (iters[i]);
+  
+  Parfactor* productHete;
+  bool initHete = false;
+  Parfactor* productHomo;
+  bool initHomo = false;
+  int first = 2;
+  
+  //pfList_.remove (iters[0]);
+  for (size_t i = 0; i < iters.size(); i++) {
+      if ((*iters[i])->isHeterogeneous()) {
+          
+          if (!initHete) {
+              //std::cout<<"init hete\n";
+              productHete = *(iters[i]);
+              //productHete->print();
+              //std::cout<<"size " << pfList_.size();
+              pfList_.remove(iters[i]);
+              //std::cout<<"size " << pfList_.size();
+              //posHete = iters[i];
+              initHete = true;
+              first = 2;
+          } else {
+              //if (Globals::verbosity > 3) std::cout<<"Heterogeneous multiplication\n";
+              productHete->multiply(**(iters[i]));
+              //std::cout<<"size " << pfList_.size()<<"\n";
+              pfList_.removeAndDelete (iters[i]);
+              //std::cout<<"size " << pfList_.size()<<"\n";
+          }
+      } else {
+          if (!initHomo) {
+              //std::cout<<"init homo\n";
+              productHomo = *(iters[i]);
+              //productHomo->print();
+              //std::cout<<"size " << pfList_.size()<<"\n";
+              pfList_.remove(iters[i]);
+              //std::cout<<"size " << pfList_.size()<<"\n";
+              //posHomo = iters[i];
+              initHomo = true;
+              first = 1;
+          } else {
+              //if (Globals::verbosity > 3) std::cout<<"Homogeneous multiplication\n";
+              productHomo->multiply (**(iters[i]));
+              //std::cout<<"size " << pfList_.size();
+              pfList_.removeAndDelete (iters[i]);
+              //std::cout<<"size " << pfList_.size();
+          }
+      }
+    //product->multiply (**(iters[i]));
+    //pfList_.removeAndDelete (iters[i]);
   }
+  //std::cout<<"end multiply\n";
+  Parfactor* product;
+  first = 2;
+  if (initHete && initHomo) {
+      if (first == 1) {
+        productHete->multiply(*(productHomo));
+        //std::cout<<"multy " << pfList_.size() <<"\nto erase" <<"\n";
+        delete productHomo;
+        //std::cout<<"delete\n";
+        product = productHete;
+      } else {
+        productHomo->multiply(*(productHete));
+        //std::cout<<"multy " << pfList_.size() <<"\nto erase" <<"\n";
+        delete productHete;
+        //std::cout<<"delete\n";
+        product = productHomo;
+      }
+  } else {
+      if (initHete) {
+          product = productHete;
+      } else {
+          product = productHomo;
+      }
+  }
+  //std::cout<<"args "<< product->nrArguments() <<"\n";
   if (product->nrArguments() == 1) {
     delete product;
     return;
   }
   size_t fIdx = product->indexOfGroup (group_);
+  //std::cout<<fIdx<<" of " << group_<<"\n";
   LogVarSet excl = product->exclusiveLogVars (fIdx);
   if (product->constr()->isCountNormalized (excl)) {
+      //std::cout<<"countNormalized\n";
     product->sumOutIndex (fIdx);
     pfList_.addShattered (product);
   } else {
@@ -392,8 +595,27 @@ SumOutOperator::getValidOps (
     }
     ++ it;
   }
-  std::set<PrvGroup>::const_iterator groupIt = allGroups.begin();
-  while (groupIt != allGroups.end()) {
+  
+  int count = 0;
+  std::set<PrvGroup> prunedGroups(allGroups);
+  std::set<PrvGroup>::iterator itAllGroups = allGroups.begin();
+  while (itAllGroups != allGroups.end()) {
+      if (pfList.isDeputyVariable((*itAllGroups))) { 
+          //se ho tra i gruppi uno associato ad una deputy controllo se ho anche il corrispondente non deputy e lo elimino
+          PrvGroup toDelete = pfList.getDeputyCorrespondingVariable(*itAllGroups);
+          if (prunedGroups.find(toDelete) != prunedGroups.end()) {
+              prunedGroups.erase(prunedGroups.find(toDelete));
+              count++;
+          }
+      }
+      ++itAllGroups;
+  }
+  
+  if (Globals::verbosity >= 1000 && allGroups.size() > 1) 
+      std::cout<<"Eliminated groups: " << count << "\n";
+  
+  std::set<PrvGroup>::const_iterator groupIt = prunedGroups.begin();
+  while (groupIt != prunedGroups.end()) {
     if (validOp (*groupIt, pfList, query)) {
       validOps.push_back (new SumOutOperator (*groupIt, pfList));
     }
@@ -429,17 +651,21 @@ SumOutOperator::validOp (
 {
   std::vector<ParfactorList::iterator> pfIters;
   pfIters = getParfactorsWithGroup (pfList, group);
+
+  //std::cout<< "group "<<group<<"\n";
   if (isToEliminate (*pfIters[0], group, query) == false) {
     return false;
   }
   int range = -1;
   for (size_t i = 0; i < pfIters.size(); i++) {
+  //std::cout<< "pf n "<< i<< " pf "<<*pfIters[i]<<" nfg "<<(*pfIters[i])->nrFormulasWithGroup (group) << "\n";
     if ((*pfIters[i])->nrFormulasWithGroup (group) > 1) {
       return false;
     }
     size_t fIdx = (*pfIters[i])->indexOfGroup (group);
     if ((*pfIters[i])->argument (fIdx).contains (
             (*pfIters[i])->elimLogVars()) == false) {
+//	    std::cout<< (*pfIters[i])->elimLogVars() << " elim lv\n";
       return false;
     }
     if (range == -1) {
@@ -542,6 +768,8 @@ CountingOperator::getValidOps (ParfactorList& pfList)
   std::vector<CountingOperator*> validOps;
   ParfactorList::iterator it = pfList.begin();
   while (it != pfList.end()) {
+    if (!(*it)-> isHeterogeneous())
+    {
     LogVarSet candidates = (*it)->uncountedLogVars();
     for (size_t i = 0; i < candidates.size(); i++) {
       if (validOp (*it, candidates[i])) {
@@ -549,6 +777,7 @@ CountingOperator::getValidOps (ParfactorList& pfList)
             it, candidates[i], pfList));
       } else {
       }
+     }
     }
     ++ it;
   }
@@ -576,6 +805,13 @@ CountingOperator::toString()
   return ss.str();
 }
 
+std::vector<PrvGroup>
+CountingOperator::getGroups() {
+    
+    std::vector<PrvGroup> groups((*pfIter_)->getAllGroups());
+    
+    return groups;
+}
 
 
 bool
@@ -594,8 +830,6 @@ CountingOperator::validOp (Parfactor* g, LogVar X)
   }
   return true;
 }
-
-
 
 double
 GroundOperator::getLogCost()
@@ -662,16 +896,28 @@ GroundOperator::apply()
   bool countedLv = pf->countedLogVars().contains (X);
   pfList_.remove (pfIter);
   if (countedLv) {
+      //std::cout<<"contains\n";
     pf->fullExpand (X);
+    //std::cout<<pf<<"\n";
     pfList_.add (pf);
   } else {
+//      std::cout<<"not_contains\n";
+//      std::cout<<"------------------------\nprint_temp\n";
+//  pfList_.print();
+//  std::cout<<"------------------------\n\n";
     ConstraintTrees cts = pf->constr()->ground (X);
     for (size_t i = 0; i < cts.size(); i++) {
-      pfList_.add (new Parfactor (pf, cts[i]));
+        //std::cout<<"new parfactor " << i <<"\n";
+        pfList_.add (new Parfactor (pf, cts[i]));
     }
+    //std::cout<<"out\n";
     delete pf;
   }
+  
   ParfactorList::iterator pflIt = pfList_.begin();
+//  std::cout<<"------------------------\nprint_temp\n";
+//  pfList_.print();
+//  std::cout<<"------------------------\n\n";
   while (pflIt != pfList_.end()) {
     (*pflIt)->simplifyGrounds();
     ++ pflIt;
@@ -825,6 +1071,7 @@ LiftedVe::runSolver (const Grounds& query)
     }
     op->apply();
     delete op;
+	pfList_.updateDeputationList();
   }
   assert (pfList_.size() > 0);
   if (pfList_.size() > 1) {
@@ -870,6 +1117,7 @@ LiftedVe::getBestOperation (const Grounds& query)
   }
   return bestOp;
 }
+
 
 }  // namespace Horus
 

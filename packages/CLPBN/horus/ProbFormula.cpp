@@ -58,7 +58,27 @@ ProbFormula::isCounting() const
   return countedLogVar_.valid();
 }
 
+bool
+ProbFormula::isNoisyOr() const
+{
+  return noisyOr_;
+}
 
+void
+ProbFormula::setNoisyOr()
+{
+  noisyOr_= true;
+  }
+
+LogVarSet ProbFormula::noisyOrLogVars()
+{
+  return LogVarSet(orLogVars_);
+}
+
+size_t  ProbFormula::getConvVarIdx()
+{
+  return convVarIdx_;
+}
 
 LogVar
 ProbFormula::countedLogVar() const

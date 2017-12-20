@@ -1,0 +1,228 @@
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{fancyvrb}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning}
+
+\begin{document}
+
+\DefineVerbatimEnvironment{pflcodeve}{Verbatim} {xleftmargin=3.0em,fontsize=\small}
+
+\newenvironment{pflcode}
+  {\VerbatimEnvironment \setstretch{0.8} \begin{pflcodeve}}
+  {\end{pflcodeve} }
+
+\newcommand{\true}             {\mathtt{t}}
+\newcommand{\false}            {\mathtt{f}}
+\newcommand{\pathsep}          { $\triangleright$ }
+\newcommand{\tableline}        {\noalign{\hrule height 0.8pt}}
+\newcommand{\optionsection}[1] {\subsection*{\texttt{#1}}}
+
+\tikzstyle{nodestyle}   = [draw, thick, circle, minimum size=0.9cm]
+\tikzstyle{bnedgestyle} = [-triangle 45,thick]
+
+\setlength{\parskip}{\baselineskip}
+
+\title{\Huge\textbf{LP$^2$ Manual}}
+
+\author{Fabrizio Riguzzi$^1$ \\\texttt{fabrizio.riguzzi@unife.it} \and Riccardo Zese$^2$\\\texttt{riccardo.zese@unife.it}\\\\
+$^1$ Dipartimento di Ingegneria -- Universit\`a di Ferrara\\
+Via Saragat 1, 44122, Ferrara, Italy  \\
+$^2$ Dipartimento di Matematica e Informatica -- Universit\`a di Ferrara\\
+Via Saragat 1, 44122, Ferrara, Italy  \\
+}
+
+
+\date{\today}
+
+\maketitle
+\thispagestyle{empty}
+\vspace{5cm}
+
+\newpage
+
+
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+\section{Introduction}
+
+LP$^2$ \cite{BelLamRig14-ICLP-IJ} performs inference via lifted variable elimination for probabilistic logic programming languages under the distribution semantics. 
+LP$^2$ was developed by adapting the Generalized Counting First Order Variable Elimination (GC-FOVE) algorithm presented in \cite{gcfove} to this scope. 
+LP$^2$ extends GC-FOVE by introducing two new operators, \textit{heterogeneous sum} and \textit{heterogeneous multiplication}.
+LP$^2$ reads a file containing a ProbLog program and translates it to a Prolog Factor Language (PFL) file that is then processed by Yap.
+PFL allows to describe first-order probabilistic factors. 
+
+To perform inference with LP$^2$ you need to first translate ProbLog to PFL.
+\section{Problog}
+Problog is a probabilistic extension of Prolog that defines a probabilistic distribution over logic programs by specifying the probability of some facts.
+A ProbLog program is composed by a set of rules (ordinary Prolog rules) and a set of probabilistic ground facts of the form
+\begin{pflcode}
+0.9::a(a1).
+\end{pflcode}
+Non ground facts can be represented as
+\begin{pflcode}
+0.7::c(X) :- x(X).
+
+x(a1).
+x(a2).
+\end{pflcode}
+where the \verb|x/1| predicate is used to define the domain of the variable \verb|X|. \verb|x/1|  should not depend from probabilistic facts. It can be defined
+by facts and/or rules and represents a ``constraint''.
+
+Next we show an example of a Problog program.
+%esPoole
+\begin{pflcode}
+% clauses
+e3:-e1,e2.
+
+e1:-a(X),b(X),c(X),x(X).
+e2:-a(X),b(X),c(X),x(X).
+
+% probabilistic clauses
+0.9::a(X) :- x(X).
+0.8::b(X) :- x(X).
+0.7::c(X) :- x(X).
+
+% facts
+x(a1).
+x(a2).
+\end{pflcode}
+
+%%%%%
+% :- CONSTRAINTS....
+%%%%%
+
+LP$^2$ needs to know which predicates are constraints in the ProbLog program so the following statement must be added at the beginning of the file
+\begin{pflcode}
+ :-contraints(<listOfContraints>).
+\end{pflcode}
+\texttt{<listOfContraints>} is a list of predicate specifications of the form \verb|p/a|.
+Thus, the input file for the above program is
+\begin{pflcode}
+% contraints
+:- constraints([x/1]).
+
+% clauses
+e3:-e1,e2.
+
+e1:-a(X),b(X),c(X),x(X).
+e2:-a(X),b(X),c(X),x(X).
+
+% probabilistic clauses
+0.9::a(X) :- x(X).
+0.8::b(X) :- x(X).
+0.7::c(X) :- x(X).
+
+% facts
+x(a1).
+x(a2).
+\end{pflcode}
+\section{PFL Language}
+A first-order probabilistic graphical model is described using parametric factors, commonly known as parfactors. The PFL syntax for a parfactor is
+
+$$Type~~F~~;~~Phi~~;~~C.$$
+
+Where,
+\begin{itemize}
+\item $Type$ refers the type of network over which the parfactor is defined. It can be \texttt{bayes} for homogeneous factor on directed networks, \texttt{markov} for homogeneous factor on undirected ones, or \texttt{het} for heterogeneous factors 
+in which the convergent variables are assumed to be represented by the first atom in the factor’s list of atoms (added by LP$^2$).
+
+\item $F$ is a comma-separated sequence of Prolog terms that will define sets of random variables under the constraint $C$. If $Type$ is \texttt{bayes}, the first term defines the node while the remaining terms define its parents.
+
+\item $Phi$ is either a Prolog list of potential values or a Prolog goal that unifies with one. Notice that if $Type$ is \texttt{bayes} or \texttt{het}, this will correspond to the conditional probability table. Domain combinations are implicitly assumed in ascending order, with the first term being the 'most significant' (e.g. $\mathtt{x_0y_0}$, $\mathtt{x_0y_1}$, $\mathtt{x_0y_2}$, $\mathtt{x_1y_0}$, $\mathtt{x_1y_1}$, $\mathtt{x_1y_2}$).
+
+\item $C$ is a (possibly empty) list of Prolog goals that will instantiate the logical variables that appear in $F$, that is, the successful substitutions for the goals in $C$ will be the valid values for the logical variables. This allows the constraint to be defined as any relation (set of tuples) over the logical variables.
+\end{itemize}
+
+Besides \texttt{het} parfactors, LP$^2$ adds also \texttt{deputy} parfactors that are needed for heterogeneous variable elimination and that have two atoms in 
+$F$ and no $Phi$.
+They represent identity factors between the ground instantiations of the atoms.
+
+
+%%%%%
+\section{Translator}
+%%%%%
+A ProbLog file is translated into the corresponding PFL file by the Yap library \verb|lp2| that can be loaded by
+\begin{pflcode}
+?- use_module(library(lp2)).
+\end{pflcode}
+Two different commands are available:
+\begin{itemize}
+ \item \texttt{translate/2} which takes as input the name of the ProbLog input file and the name of the PFL output file, both with the file extension.
+For example\\
+\texttt{?- translate('input.pb','output.pfl').}
+
+\item \texttt{translate/1} that takes as input the name of the ProbLog input file with the file extension. The corresponding PFL file's name is the name of the input file with extension \verb|.pfl|.
+For example\\
+\texttt{?- translate('input.pb').}\\
+\noindent The output file's name is 'input.pfl'.
+
+\end{itemize}
+
+The output of the translator for the program above is
+\begin{pflcode}
+% solver settings
+:- use_module(library(pfl)).
+:- set_solver(lve).
+
+% flags settings
+:- yap_flag(unknown,fail).
+:- set_pfl_flag(use_logarithms,false).
+
+% set verbosity level
+%:- set_pfl_flag(verbosity,3).
+
+bayes e3,e1,e2;[1.0,1.0,1.0,0.0,0.0,0.0,0.0,1.0];[].
+deputy e1,e11p;[].
+het e11p,a(X),b(X),c(X);[1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,
+                         0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0];[x(X)].
+deputy e2,e21p;[].
+het e21p,a(X),b(X),c(X);[1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,
+                         0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0];[x(X)].
+
+bayes a(X);[0.1,0.9];[x(X)].
+bayes b(X);[0.2,0.8];[x(X)].
+bayes c(X);[0.3,0.7];[x(X)].
+x(a1).
+x(a2).
+\end{pflcode}
+
+\section{Querying}
+Once the ProbLog file is translated into PFL, it can be loaded in Yap and queries can be issued as in PFL.
+For example, suppose the above program is stored into \verb|test.pfl|, you can issue the command
+\begin{pflcode}
+yap -l test.pfl
+\end{pflcode}
+to load the program and 
+\begin{pflcode}
+?- e3(X).
+\end{pflcode}
+to compute the probability that \verb|e3| is true.
+Some examples of ProbLog programs ready for translation is in folder \verb|packages/CLPBN/examples/lp2|.
+
+\section{Papers}
+E. Bellodi, E. Lamma, F. Riguzzi, V. Santos Costa, and R. Zese. \textit{Lifted variable elimination for probabilistic logic programming}. Theory and Practice
+of Logic Programming, (special issue on ICLP 2014), 2014. PDF: \url{http://arxiv.org/abs/1405.3218}.
+
+
+\begin{thebibliography}{1}
+
+\bibitem{BelLamRig14-ICLP-IJ}
+E.~Bellodi, E.~Lamma, F.~Riguzzi, V.~Santos~Costa, and R.~Zese.
+\newblock Lifted variable elimination for probabilistic logic programming.
+\newblock {\em Theory and Practice of Logic Programming}, (special issue on
+  ICLP 2014), 2014.
+
+\bibitem{gcfove}
+Nima Taghipour, Daan Fierens, Jesse Davis, and Hendrik Blockeel.
+\newblock Lifted variable elimination: Decoupling the operators from the
+  constraint language.
+\newblock {\em Journal of Artificial Intelligence Research}, 47:393--439, 2013.
+
+\end{thebibliography}
+\end{document}

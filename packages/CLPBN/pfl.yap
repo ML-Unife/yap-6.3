@@ -7,6 +7,8 @@
 		[op(550,yfx,@),
 		 op(550,yfx,::),
 		 op(1150,fx,bayes),
+		 op(1150,fx,het),
+		 op(1150,fx,deputy),
 		 op(1150,fx,markov),
 		 factor/6,
 		 skolem/2,
@@ -59,6 +61,18 @@
 :- dynamic factor/6, skolem_in/2, skolem/2, preprocess/3, evidence/2, id/1.
 
 user:term_expansion( bayes((Formula ; Phi ; Constraints)), pfl:factor(bayes,Id,FList,FV,Phi,Constraints)) :-
+	!,
+	term_variables(Formula, FreeVars),
+	FV =.. [''|FreeVars],
+	new_id(Id),
+	process_args(Formula, Id, 0, _, FList, []).
+user:term_expansion( het((Formula ;  Phi;Constraints)), pfl:factor(het(0),Id,FList,FV,Phi,Constraints)) :-
+	!,
+	term_variables(Formula, FreeVars),
+	FV =.. [''|FreeVars],
+	new_id(Id),
+	process_args(Formula, Id, 0, _, FList, []).
+user:term_expansion( deputy((Formula ; Constraints)), pfl:factor(deputy,Id,FList,FV,[1.0, 0.0, 0.0, 1.0],Constraints)) :-
 	!,
 	term_variables(Formula, FreeVars),
 	FV =.. [''|FreeVars],
@@ -156,6 +170,18 @@ process_arg(Sk::D, Id, _I) -->
 	  assert(skolem_in(Sk, Id))
 	},
 	[Sk].
+process_arg(or(In,Var,Sk), Id, _I) -->
+	!,
+	{
+	  % if :: been used before for this skolem
+	  % just keep on using it,
+	  % otherwise, assume it is t,f
+	  ( \+ \+ skolem(or(In,Var,Sk),_D) -> true ; new_skolem(or(In,Var,Sk),[none,one]) ),
+	  assert(skolem_in(or(In,Var,Sk), Id))
+	},
+	[or(In,Var,Sk)].
+
+
 process_arg(Sk, Id, _I) -->
 	!,
 	{

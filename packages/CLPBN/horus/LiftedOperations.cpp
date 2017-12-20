@@ -18,6 +18,7 @@ Parfactors absorve (ObservedFormula& obsFormula, Parfactor* g);
 void
 shatterAgainstQuery (ParfactorList& pfList, const Grounds& query)
 {
+    //std::cout<<"shatter_against_query\n";
   for (size_t i = 0; i < query.size(); i++) {
     if (query[i].isAtom()) {
       continue;
@@ -62,6 +63,8 @@ shatterAgainstQuery (ParfactorList& pfList, const Grounds& query)
     Util::printAsteriskLine();
     pfList.print();
   }
+  
+  pfList.updateDeputationList();
 }
 
 
