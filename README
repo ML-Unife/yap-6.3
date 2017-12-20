@@ -1,4 +1,18 @@
+This is a version of yap-6.3 up to commit
+commit 2c8fcc6698836b795ef0c1add318437af42a1428
+Author: Vitor Santos Costa <vsc@dcc.fc.up.pt>
+Date:   Fri Jan 10 15:34:02 2014 +0000
 
+    fix typo
+
+plus system LP2:
+https://sites.google.com/a/unife.it/ml/lp2
+https://bitbucket.org/friguzzi/cpl2pfl
+
+It compiles with configure and make.
+To use LP2 configure with
+configure
+with no options
 
 			README for YAP6
 
