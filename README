@@ -10,9 +10,12 @@ https://sites.google.com/a/unife.it/ml/lp2
 https://bitbucket.org/friguzzi/cpl2pfl
 
 It compiles with configure and make.
-To use LP2 configure with
+To use LP2 compile with
 configure
-with no options
+make
+make install
+
+Tested on Ubuntu 17.06 64bits
 
 			README for YAP6
 
